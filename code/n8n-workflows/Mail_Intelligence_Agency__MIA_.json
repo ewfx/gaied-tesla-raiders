@@ -1,0 +1,643 @@
+{
+  "name": "Mail Intelligence Agency (MIA)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": ""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -740,
+        -20
+      ],
+      "id": "86ac0320-34fc-4b10-ac08-7fe5ea642605",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mNllnOzkf0u7a6LL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "HTTP-Referer",
+              "value": "https://n8n.local"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistralai/mistral-7b-instruct\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a strict banking assistant that classifies emails. Your job is to read the email content and attachment (if present), and return only one of the allowed Request Type and Sub Request Type. Use the following strictly:\\n\\nAdjustment: [\\\"Reallocation Fees\\\", \\\"Amendment Fees\\\", \\\"Reallocation Principal\\\"]\\nAU Transfer: []\\nClosing Notice: []\\nCommitment Change: [\\\"Cashless Roll\\\", \\\"Decrease\\\", \\\"Increase\\\"]\\nFee Payment: [\\\"Ongoing Fee\\\", \\\"Letter of Credit Fee\\\"]\\nMoney Movement-Inbound: [\\\"Principal\\\", \\\"Interest\\\", \\\"Principal + Interest\\\", \\\"Principal + Interest + Fee\\\"]\\nMoney Movement - Outbound: [\\\"Timebound\\\", \\\"Foreign Currency\\\"]\\nUnclassified: []\\n\\nIf the email content does not match any of the above clearly, classify it as:\\n{\\n  \\\"Request_Type\\\": \\\"Unclassified\\\",\\n  \\\"Sub_Request_Type\\\": \\\"\\\"\\n}\\n\\n**Do not add any explanation or additional text. Only return JSON in the format below.**\\n{\\n  \\\"Request_Type\\\": \\\"...\\\",\\n  \\\"Sub_Request_Type\\\": \\\"...\\\"\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{$json.email_subject.replace(/\\n/g, ' ') || ''}} {{$json.email_body.replace(/\\n/g, ' ') || ''}} {{$json.attachment_content.replace(/\\n/g, ' ') || ''}}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        -20
+      ],
+      "id": "7e01c38a-48ed-49f7-8557-328040c6cae5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -500,
+        -20
+      ],
+      "id": "57193011-aee4-4eb0-8781-4930c14f8f9e",
+      "name": "Gmail Parser",
+      "webhookId": "a8ba4185-4541-44ae-9be6-7441de2dd687",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mNllnOzkf0u7a6LL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "88a122e5-0363-4128-a111-5a7e2fec4d34",
+              "leftValue": "={{ $json.hasAttachment }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        -20
+      ],
+      "id": "6a58e09d-4256-46a2-ab67-8c61d3b761da",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1ac18cc1-f52d-4685-ad1b-d223984f1b24",
+              "name": "email_body",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "2c656886-31ac-49c4-b877-5993b033dd8d",
+              "name": "sender_email",
+              "value": "={{ $json.headers.from }}",
+              "type": "string"
+            },
+            {
+              "id": "f129e477-0ecd-483a-a3db-11d4b5ab1518",
+              "name": "email_id",
+              "value": "={{$json[\"id\"]}}",
+              "type": "string"
+            },
+            {
+              "id": "178df0f6-2b7c-4f7d-aadc-66958f721056",
+              "name": "email_subject",
+              "value": "={{ $json.headers.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "c850f37d-3c32-4a63-94ba-16cddad6ca60",
+              "name": "email_received_time",
+              "value": "={{ $json.headers.date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -280,
+        -20
+      ],
+      "id": "b4b93222-6e8c-4371-89b0-3e38b1b791d9",
+      "name": "ExtractEmailFields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\n\nconst hasAttachment = !!item.binary && Object.keys(item.binary).length > 0;\nconst firstAttachmentKey = hasAttachment ? Object.keys(item.binary)[0] : null;\n\nreturn [\n  {\n    json: {\n      email_id: item.json.email_id,\n      email_body: item.json.email_body,\n      email_subject: item.json.email_subject,\n      sender_email: item.json.sender_email,\n      email_received_time: item.json.email_received_time,\n      hasAttachment,\n      attachment_key: firstAttachmentKey,\n    },\n    binary: hasAttachment ? { data: item.binary[firstAttachmentKey] } : undefined,\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -60,
+        -20
+      ],
+      "id": "9d74123b-49d6-4fd0-9c7e-d0be6ee237be",
+      "name": "CheckForAttachments"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        280,
+        -280
+      ],
+      "id": "52d7da5d-1af5-4833-8082-ffee63f79dc1",
+      "name": "ExtractTextFromAttachments"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        520,
+        -280
+      ],
+      "id": "94c93632-90f2-4042-9fc4-5a158c4b7c32",
+      "name": "CombineEmailFieldsWithAttachmentContents"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\n\nconst emailBody = item.email_body || '';\nconst pdfText = item.text || '';\n\nconst finalContent = `Email Content:\\n${emailBody}\\n\\nAttachment Content:\\n${pdfText}`;\n\nreturn [\n  {\n    json: {\n      email_id: item.email_id,\n      email_body: item.email_body,\n      email_subject: item.email_subject,\n      sender_email: item.sender_email,\n      email_received_time: item.email_received_time,\n      hasAttachment: item.hasAttachment,\n      attachment_key: item.attachment_key,\n      attachment_content: item.text\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        -280
+      ],
+      "id": "8d910df0-2112-4167-8ed2-b9231208b63d",
+      "name": "RefactorToGlobalJSONFormat"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a443028f-04f8-4276-a8c8-e0a52d6a48dc",
+              "name": "attachment_content",
+              "value": "=",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        0
+      ],
+      "id": "067b3081-f02d-4dcd-bd5c-7b4cdbdd48bc",
+      "name": "SetEmailFieldsWithoutAttachements"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        900,
+        -20
+      ],
+      "id": "e4449cc3-ee7c-45e4-91f4-ccbf683381e8",
+      "name": "MergeBothFlowJSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\n\n// Parse AI classification output\nlet classificationText = item.choices[0].message.content.trim();\nlet classification = {};\ntry {\n  classification = JSON.parse(classificationText);\n} catch (err) {\n  classification = {\n    Request_Type: \"ClassificationError\",\n    Sub_Request_Type: \"\"\n  };\n}\n\nreturn [\n  {\n    json: {\n      email_id: item.email_id,\n      email_body: item.email_body,\n      email_subject: item.email_subject,\n      sender_email: item.sender_email,\n      email_received_time: item.email_received_time,\n      hasAttachment: item.hasAttachment,\n      attachment_key: item.attachment_key,\n      attachment_content: item.attachment_content,\n      request_type: classification.Request_Type || \"ClassificationError\",\n      sub_request_type: classification.Sub_Request_Type || \"\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        -20
+      ],
+      "id": "86055f27-b8fe-454d-8503-f9a31a50c8b9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1240,
+        -340
+      ],
+      "id": "b82cf0b7-3311-4fb1-a20f-46e21e50a6e6",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appbpZYnaiApSJdwe",
+          "mode": "list",
+          "cachedResultName": "Classification",
+          "cachedResultUrl": "https://airtable.com/appbpZYnaiApSJdwe"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblJvgVFIxor1yeSZ",
+          "mode": "list",
+          "cachedResultName": "email_classification_table",
+          "cachedResultUrl": "https://airtable.com/appbpZYnaiApSJdwe/tblJvgVFIxor1yeSZ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email_id": "={{ $json.email_id }}",
+            "email_body": "={{ $json.email_body }}",
+            "email_subject": "={{ $json.email_subject }}",
+            "sender_email": "={{ $json.sender_email }}",
+            "email_received_time": "={{ $json.email_received_time }}",
+            "hasAttachment": "={{ $json.hasAttachment ? \"yes\" : \"no\" }}",
+            "attachment_key": "={{ $json.attachment_key || \"\"}}",
+            "attachment_content": "={{ $json.attachment_content }}",
+            "request_type": "={{ $json.request_type }}",
+            "sub_request_type": "={{ $json.sub_request_type }}",
+            "request_status": "\"New\""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email_body",
+              "displayName": "email_body",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email_subject",
+              "displayName": "email_subject",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sender_email",
+              "displayName": "sender_email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email_received_time",
+              "displayName": "email_received_time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "hasAttachment",
+              "displayName": "hasAttachment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "attachment_key",
+              "displayName": "attachment_key",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "attachment_content",
+              "displayName": "attachment_content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "request_type",
+              "displayName": "request_type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sub_request_type",
+              "displayName": "sub_request_type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "request_status",
+              "displayName": "request_status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1600,
+        -20
+      ],
+      "id": "1184d518-f132-4959-8c7a-937c0d87b8ef",
+      "name": "Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "RLDpIOss2Z7ISIAD",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Gmail Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Gmail Parser": {
+      "main": [
+        [
+          {
+            "node": "ExtractEmailFields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "ExtractTextFromAttachments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CombineEmailFieldsWithAttachmentContents",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "SetEmailFieldsWithoutAttachements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ExtractEmailFields": {
+      "main": [
+        [
+          {
+            "node": "CheckForAttachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckForAttachments": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ExtractTextFromAttachments": {
+      "main": [
+        [
+          {
+            "node": "CombineEmailFieldsWithAttachmentContents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CombineEmailFieldsWithAttachmentContents": {
+      "main": [
+        [
+          {
+            "node": "RefactorToGlobalJSONFormat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RefactorToGlobalJSONFormat": {
+      "main": [
+        [
+          {
+            "node": "MergeBothFlowJSON",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "SetEmailFieldsWithoutAttachements": {
+      "main": [
+        [
+          {
+            "node": "MergeBothFlowJSON",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "MergeBothFlowJSON": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4b7ee094-b8b9-4614-8623-c4db380e5d77",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a66b5c0a515376fd514d4f998c589fdf2a0d69036047cb2ad433ae4ac943c03"
+  },
+  "id": "yUcVRq67JzZJ3dor",
+  "tags": []
+}
