@@ -30,10 +30,10 @@ In a high-volume operational banking setup, shared mailboxes receive hundreds of
 
 This project solves that problem by:
 
-✅ Automatically understanding email + attachment content.
-✅ Categorizing the message using AI.
-✅ Logging classification in Airtable.
-✅ Detecting repeated request types (for the same sender).
+- 🔹 Automatically understanding email + attachment content.
+- 🔹 Categorizing the message using AI.
+- 🔹 Logging classification in Airtable.
+- 🔹 Detecting repeated request types (for the same sender).
 
 ## ⚙️ What It Does
 - 🔹 Polls Gmail for new emails (every minute).
@@ -47,19 +47,19 @@ This project solves that problem by:
         "sub_request_type": "Increase"
       }
 ```      
-✅ Logs to Airtable with status: new or duplicate.      
+- 🔹 Logs to Airtable with status: new or duplicate.      
 
 ## 🛠️ How We Built It
 We used n8n as the orchestration engine and built the following modular nodes:
 
-✅ Gmail Trigger – Listens for incoming mail.
-✅ Parser – Gets email content and metadata.
-✅ IF Node – Checks for attachments.
-✅ Extractor – Converts PDF/text to string.
-✅ Merger – Combines email + attachment content.
-✅ LLM Prompt (HTTP) – Sends combined text to AI for classification.
-✅ Airtable Search – Checks for duplicate request type by sender.
-✅ Airtable Create – Inserts classified result with status.
+- 🔹 Gmail Trigger – Listens for incoming mail.
+- 🔹 Parser – Gets email content and metadata.
+- 🔹 IF Node – Checks for attachments.
+- 🔹 Extractor – Converts PDF/text to string.
+- 🔹 Merger – Combines email + attachment content.
+- 🔹 LLM Prompt (HTTP) – Sends combined text to AI for classification.
+- 🔹 Airtable Search – Checks for duplicate request type by sender.
+- 🔹 Airtable Create – Inserts classified result with status.
 
 ## 🚧 Challenges We Faced
 - 🔹 Prompt engineering to guide the LLM to strictly return only allowed request/sub-request types.
@@ -78,9 +78,9 @@ We used n8n as the orchestration engine and built the following modular nodes:
    n8n start
    ```
 3. Configure environment variables/API keys:
-   ✅ Gmail credentials
-   ✅ OpenRouter API token
-   ✅ Airtable Base ID and API Key
+   - 🔹 Gmail credentials
+   - 🔹 OpenRouter API token
+   - 🔹 Airtable Base ID and API Key
 
 4. Import workflow JSON and run Test Workflow.
 
@@ -95,3 +95,4 @@ We used n8n as the orchestration engine and built the following modular nodes:
 - **Vigneshkumar G** - [LinkedIn](https://www.linkedin.com/in/vkumarg31990/)
 - **Karthik S** - [LinkedIn](https://www.linkedin.com/in/karthik-sankaran-bigdata/)
 - **Devendra B** - [LinkedIn](https://www.linkedin.com/in/devendra-bhumarapu/)
+- **Rameshchandran A G**
